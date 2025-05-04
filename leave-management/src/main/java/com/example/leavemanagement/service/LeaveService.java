@@ -48,7 +48,7 @@ public class LeaveService {
         );
         
         // Check leave balance
-        switch (leaveRequestDto.getLeaveType()) {
+        switch (leaveRequestDto.Type()) {
             case ANNUAL:
                 if (user.getAnnualLeaveBalance() < numberOfDays) {
                     throw new InsufficientLeaveBalanceException("Insufficient annual leave balance");
@@ -240,7 +240,7 @@ public class LeaveService {
 
     public LeaveBalanceResponseDto getLeaveBalance(String userEmail) {
         User user = userRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + userEmail));
+            .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + userEmail));
         
         return new LeaveBalanceResponseDto(
             user.getAnnualLeaveBalance(),
