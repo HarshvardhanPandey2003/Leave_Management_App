@@ -1,0 +1,72 @@
+Key Differences: Single vs Multi-Container Deployment
+Docker Compose: The major change is introducing a docker-compose.yml file to orchestrate multiple services (frontend, backend, and PostgreSQL). This allows you to manage them as a single application, handling networking and dependencies automatically.
+
+Multiple Images: Instead of building and pushing one Docker image, you now build and push separate images for the frontend and backend. PostgreSQL uses the official image, so you just reference it in Docker Compose—no need to build or push your own.
+
+Networking: Docker Compose creates an isolated network where services communicate using service names (e.g., backend connects to db:5432). You don’t need to change backend code for connection strings if you’ve already parameterized them for Docker Compose.
+
+Port Exposure on EC2
+Frontend: Usually, only the frontend (e.g., Next.js on port 80 or 3000) is exposed to the internet. Backend and database ports remain internal for security.
+
+EC2 Security Groups: You only need to open the port mapped to the frontend container (e.g., 80 or 443) in your EC2 security group. Backend and database ports should not be exposed externally unless you have a specific reason.
+
+Where Are the Images/Containers Stored?
+Images: After building and pushing, your frontend and backend images are stored on Docker Hub (or another container registry).
+
+On EC2: When you deploy, Docker Compose pulls these images from Docker Hub onto your EC2 instance. The PostgreSQL image is pulled from Docker Hub’s official library.
+
+Running Containers: Docker Compose then starts containers from these images on your EC2 instance. The containers themselves run on the EC2 host, managed by Docker.
+
+PostgreSQL Storage: Local or Cloud?
+Official Image: The PostgreSQL container uses the official Docker image.
+
+Data Storage: By default, data is stored inside the EC2 instance (often mapped to a Docker volume). For persistence, you should map a Docker volume to a directory backed by an AWS EBS volume. This ensures your database data survives container restarts or EC2 reboots.
+
+Not Cloud-Hosted: Unless you use a managed service like Amazon RDS, your PostgreSQL data is stored locally on your EC2 instance, not in the cloud.
+
+
+
+Where Docker Stores Images and Containers on EC2
+Image Pulling: When Docker Compose runs on your EC2 instance, it pulls the required images (frontend, backend, and the official Postgres image) from Docker Hub (or your specified registry).
+
+Local Storage: These images are downloaded and stored locally on the EC2 instance, not kept on Docker Hub after pulling. They reside on the EC2’s attached disk, typically the root EBS volume.
+
+Storage Path: On Linux (including EC2), Docker stores all images, containers, and related data under /var/lib/docker. The actual image layers are in subdirectories like /var/lib/docker/overlay2 (if using the overlay2 storage driver).
+
+Container Runtime: When you run a container, Docker uses the locally stored image to spin up a running instance (the container). The running container’s writable layer is also stored under /var/lib/docker.
+
+Summary:
+
+Docker Hub is just the remote registry.
+
+EC2 is a virtual server with its own disk (usually EBS).
+
+Docker downloads images from Docker Hub and stores them on the EC2’s disk.
+
+Containers run from these locally stored images.
+
+For PostgreSQL data, you typically mount a Docker volume (which maps to a directory on the EC2’s EBS disk) to persist database files. This is why your database data survives container restarts, as long as the underlying disk is not deleted.
+
+1. Port Exposure on EC2
+Frontend (Next.js): Exposed publicly via port 80 (HTTP) or 443 (HTTPS) on EC2.
+
+Backend (Spring Boot): Runs internally on port 8080 (or your chosen port) but not exposed on EC2. Only accessible within the Docker network.
+
+PostgreSQL: Runs internally on port 5432 and not exposed on EC2.
+Result:
+
+Only the frontend is publicly accessible.
+
+Backend and PostgreSQL communicate internally via Docker’s private network.
+
+In security groups why do we use TCP :
+🔒 1. Reliable, Connection-Oriented Protocol
+TCP ensures:
+Data is delivered reliably (no missing packets).
+Packets are delivered in order (crucial for web apps, SSH, and HTTPS).
+Connections are maintained (for sessions like SSH and HTTP requests).
+
+Rule Type	Port	Why TCP?
+HTTP	80	Web traffic uses TCP to reliably transfer HTML, CSS, JS, etc.
+HTTPS	443	Secure version of HTTP. Needs reliable, ordered delivery for encrypted data.
+Outbound	All	Most backend services, APIs, and external services (e.g., API calls, NPM installs) use TCP.
