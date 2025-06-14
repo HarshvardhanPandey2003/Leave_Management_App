@@ -1,5 +1,3 @@
-// LeaveService.java
-
 package com.example.leavemanagement.service;
 import com.example.leavemanagement.dto.leave.*;
 import com.example.leavemanagement.dto.leave.LeaveRequestDto;
@@ -36,45 +34,45 @@ public class LeaveService {
     public LeaveResponseDto applyLeave(LeaveRequestDto leaveRequestDto, String userEmail) {
         // Validate request
         validateLeaveRequest(leaveRequestDto);
-        
+
         // Get current user
         User user = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + userEmail));
-        
+
         // Calculate number of days
         long numberOfDays = java.time.temporal.ChronoUnit.DAYS.between(
-            leaveRequestDto.getStartDate(), 
-            leaveRequestDto.getEndDate().plusDays(1)
+                leaveRequestDto.getStartDate(),
+                leaveRequestDto.getEndDate().plusDays(1)
         );
-        
-        // Check leave balance
-        switch (leaveRequestDto.Type()) {
+
+        // Check leave balance - FIXED: Changed Type() to getLeaveType()
+        switch (leaveRequestDto.getLeaveType()) {
             case ANNUAL:
                 if (user.getAnnualLeaveBalance() < numberOfDays) {
                     throw new InsufficientLeaveBalanceException("Insufficient annual leave balance");
                 }
                 user.setAnnualLeaveBalance(user.getAnnualLeaveBalance() - (int)numberOfDays);
                 break;
-                
+
             case SICK:
                 if (user.getSickLeaveBalance() < numberOfDays) {
                     throw new InsufficientLeaveBalanceException("Insufficient sick leave balance");
                 }
                 user.setSickLeaveBalance(user.getSickLeaveBalance() - (int)numberOfDays);
                 break;
-                
+
             case CASUAL:
                 if (user.getCasualLeaveBalance() < numberOfDays) {
                     throw new InsufficientLeaveBalanceException("Insufficient casual leave balance");
                 }
                 user.setCasualLeaveBalance(user.getCasualLeaveBalance() - (int)numberOfDays);
                 break;
-                
+
             default:
                 // For other leave types, no balance check
                 break;
         }
-        
+
         // Create leave request
         LeaveRequest leaveRequest = new LeaveRequest(
                 user,
@@ -83,11 +81,11 @@ public class LeaveService {
                 leaveRequestDto.getReason(),
                 leaveRequestDto.getLeaveType()
         );
-        
+
         // Save the user with updated balance and the leave request
         userRepository.save(user);
         LeaveRequest savedRequest = leaveRequestRepository.save(leaveRequest);
-        
+
         // Return response
         return convertToDto(savedRequest);
     }
@@ -98,60 +96,61 @@ public class LeaveService {
     public ApiResponse cancelLeaveRequest(Long leaveId, String userEmail) {
         User user = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + userEmail));
-        
+
         LeaveRequest leaveRequest = leaveRequestRepository.findById(leaveId)
                 .orElseThrow(() -> new ResourceNotFoundException("Leave request not found with id: " + leaveId));
-        
+
         // Check if the leave request belongs to the user
         if (!leaveRequest.getUser().getId().equals(user.getId())) {
             return new ApiResponse(false, "You can only cancel your own leave requests");
         }
-        
+
         // Check if the leave request is still pending
         if (leaveRequest.getStatus() != LeaveStatus.PENDING) {
             return new ApiResponse(false, "Only pending leave requests can be cancelled");
         }
-        
+
         // Calculate number of days
         long numberOfDays = java.time.temporal.ChronoUnit.DAYS.between(
-            leaveRequest.getStartDate(), 
-            leaveRequest.getEndDate().plusDays(1)
+                leaveRequest.getStartDate(),
+                leaveRequest.getEndDate().plusDays(1)
         );
-        
+
         // Restore leave balance
         switch (leaveRequest.getLeaveType()) {
             case ANNUAL:
                 user.setAnnualLeaveBalance(user.getAnnualLeaveBalance() + (int)numberOfDays);
                 break;
-                
+
             case SICK:
                 user.setSickLeaveBalance(user.getSickLeaveBalance() + (int)numberOfDays);
                 break;
-                
+
             case CASUAL:
                 user.setCasualLeaveBalance(user.getCasualLeaveBalance() + (int)numberOfDays);
                 break;
-                
+
             default:
                 // For other leave types, no balance update
                 break;
         }
-        
+
         // Cancel the leave request
         leaveRequest.setStatus(LeaveStatus.CANCELLED);
-        
+
         // Save the updated user and leave request
         userRepository.save(user);
         leaveRequestRepository.save(leaveRequest);
-        
+
         return new ApiResponse(true, "Leave request cancelled successfully");
     }
+
     /**
      * Get all leave requests (for admin/HR)
      */
     public List<LeaveResponseDto> getAllLeaveRequests() {
         List<LeaveRequest> leaveRequests = leaveRequestRepository.findAllByOrderByAppliedAtDesc();
-        
+
         return leaveRequests.stream()
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
@@ -182,7 +181,7 @@ public class LeaveService {
         if (leaveRequestDto.getEndDate().isBefore(leaveRequestDto.getStartDate())) {
             throw new InvalidLeaveDatesException("End date cannot be before start date");
         }
-        
+
         // Check if dates are in the past
         if (leaveRequestDto.getStartDate().isBefore(LocalDate.now())) {
             throw new InvalidLeaveDatesException("Cannot apply for leave with start date in the past");
@@ -192,16 +191,16 @@ public class LeaveService {
     public ApiResponse approveLeaveRequest(Long leaveId) {
         LeaveRequest leaveRequest = leaveRequestRepository.findById(leaveId)
                 .orElseThrow(() -> new ResourceNotFoundException("Leave request not found with id: " + leaveId));
-        
+
         // Check if the leave request is in a state that can be approved
         if (leaveRequest.getStatus() != LeaveStatus.PENDING) {
             return new ApiResponse(false, "Only pending leave requests can be approved");
         }
-        
+
         // Approve the leave request
         leaveRequest.setStatus(LeaveStatus.APPROVED);
         leaveRequestRepository.save(leaveRequest);
-        
+
         return new ApiResponse(true, "Leave request approved successfully");
     }
 
@@ -211,18 +210,18 @@ public class LeaveService {
     public ApiResponse rejectLeaveRequest(Long leaveId, String rejectionReason) {
         LeaveRequest leaveRequest = leaveRequestRepository.findById(leaveId)
                 .orElseThrow(() -> new ResourceNotFoundException("Leave request not found with id: " + leaveId));
-        
+
         // Check if the leave request is in a state that can be rejected
         if (leaveRequest.getStatus() != LeaveStatus.PENDING) {
             return new ApiResponse(false, "Only pending leave requests can be rejected");
         }
-        
+
         // Reject the leave request
         leaveRequest.setStatus(LeaveStatus.REJECTED);
         // If you want to store the rejection reason, add a field to the LeaveRequest entity
         // For now, we're not storing it
         leaveRequestRepository.save(leaveRequest);
-        
+
         return new ApiResponse(true, "Leave request rejected successfully");
     }
 
@@ -237,31 +236,30 @@ public class LeaveService {
                 .collect(Collectors.toList());
     }
 
-
     public LeaveBalanceResponseDto getLeaveBalance(String userEmail) {
         User user = userRepository.findByEmail(userEmail)
-            .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + userEmail));
-        
+                .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + userEmail));
+
         return new LeaveBalanceResponseDto(
-            user.getAnnualLeaveBalance(),
-            user.getSickLeaveBalance(),
-            user.getCasualLeaveBalance()
+                user.getAnnualLeaveBalance(),
+                user.getSickLeaveBalance(),
+                user.getCasualLeaveBalance()
         );
     }
+
     /**
      * Update leave balance for a user (admin only)
      */
     public ApiResponse updateLeaveBalance(LeaveBalanceUpdateDto balanceUpdateDto) {
         User user = userRepository.findByEmail(balanceUpdateDto.getEmail())
-            .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + balanceUpdateDto.getEmail()));
-    
+                .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + balanceUpdateDto.getEmail()));
+
         user.setAnnualLeaveBalance(balanceUpdateDto.getAnnualLeaveBalance());
         user.setSickLeaveBalance(balanceUpdateDto.getSickLeaveBalance());
         user.setCasualLeaveBalance(balanceUpdateDto.getCasualLeaveBalance());
-        
+
         userRepository.save(user);
-        
+
         return new ApiResponse(true, "Leave balance updated successfully");
     }
-
 }
