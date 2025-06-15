@@ -1,4 +1,4 @@
-package com.example.leave_management;
+package com.example.leavemanagement;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
