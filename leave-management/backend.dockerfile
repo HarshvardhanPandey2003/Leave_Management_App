@@ -1,12 +1,12 @@
 # # Build stage
-# FROM maven:3.8.6-openjdk-17 AS builder
+# FROM maven:3.8.6-openjdk-21 AS builder
 # WORKDIR /app
 # COPY pom.xml .
 # RUN mvn dependency:go-offline
 # COPY src ./src
 # RUN mvn package -DskipTests
 
-# # Run stage
+# # Runtime stage
 # FROM openjdk:21-alpine
 # WORKDIR /app
 # COPY --from=builder /app/target/*.jar app.jar

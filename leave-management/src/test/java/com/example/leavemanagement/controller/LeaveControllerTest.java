@@ -52,21 +52,27 @@ class LeaveControllerTest {
 
     @Test
     @DisplayName("Should successfully apply for leave with authenticated employee")
+    // Mocks a logged-in user so we can test secured endpoints without real login.
     @WithMockUser(username = "employee@company.com", roles = "EMPLOYEE")
     void shouldApplyLeaveSuccessfully() throws Exception {
         // Arrange
+        // Creating an Object and setting the initial values 
         LeaveRequestDto leaveRequest = new LeaveRequestDto();
         leaveRequest.setStartDate(LocalDate.now().plusDays(1));
         leaveRequest.setEndDate(LocalDate.now().plusDays(3));
         leaveRequest.setReason("Vacation");
         leaveRequest.setLeaveType(LeaveType.ANNUAL);
         
+        //We mock what the leaveService will return when this leave is applied — 
+        // pretending as if it successfully saved a new leave with status PENDING.
+        // And we use Moackito which uses "when" to return a mock response we just created 
         LeaveResponseDto mockResponse = createMockLeaveResponse(1L, LeaveStatus.PENDING, "employee@company.com");
-        
         when(leaveService.applyLeave(any(LeaveRequestDto.class), anyString()))
                 .thenReturn(mockResponse);
 
         // Act & Assert
+        // So here we perform a mock POST request to the apply leave endpoint,
+        // Then use "andExpect" to check if the response is as expected.
         mockMvc.perform(post("/api/leave/apply")
                 .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)

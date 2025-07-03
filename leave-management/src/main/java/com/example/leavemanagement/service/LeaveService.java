@@ -148,6 +148,7 @@ public class LeaveService {
     /**
      * Get all leave requests (for admin/HR)
      */
+    // Use of stream is when we have to take a list based on some filter and then return it as a response
     public List<LeaveResponseDto> getAllLeaveRequests() {
         List<LeaveRequest> leaveRequests = leaveRequestRepository.findAllByOrderByAppliedAtDesc();
 
@@ -159,6 +160,8 @@ public class LeaveService {
     /**
      * Convert LeaveRequest entity to LeaveResponseDto
      */
+    // We have a separate method to convert LeaveRequest entity to LeaveResponseDto
+    // For APIs like getAllLeaveRequests() and getMyLeaveRequests() where we have to return a list of leave requests
     private LeaveResponseDto convertToDto(LeaveRequest leaveRequest) {
         return new LeaveResponseDto(
                 leaveRequest.getId(),
@@ -253,11 +256,12 @@ public class LeaveService {
     public ApiResponse updateLeaveBalance(LeaveBalanceUpdateDto balanceUpdateDto) {
         User user = userRepository.findByEmail(balanceUpdateDto.getEmail())
                 .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + balanceUpdateDto.getEmail()));
-
+        // Here we take the input of all the parameters from the LeaveBalanceUpdateDto
+        // Then use getters to get the values and setters to set the values in the user object
         user.setAnnualLeaveBalance(balanceUpdateDto.getAnnualLeaveBalance());
         user.setSickLeaveBalance(balanceUpdateDto.getSickLeaveBalance());
         user.setCasualLeaveBalance(balanceUpdateDto.getCasualLeaveBalance());
-
+        // Then save it to the database
         userRepository.save(user);
 
         return new ApiResponse(true, "Leave balance updated successfully");
