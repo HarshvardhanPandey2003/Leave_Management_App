@@ -204,8 +204,6 @@ For full docs, see `documentation.txt` or Swagger UI at `/swagger-ui.html`.
 3. Commit & push: `git push origin feat/YourFeature`
 4. Open a Pull Request — reviews & 🎉!
 
-Please follow the [Code of Conduct](CODE_OF_CONDUCT.md) and [Contributing Guidelines](CONTRIBUTING.md).
-
 ---
 
 ## 📄 License
