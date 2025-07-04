@@ -1,4 +1,3 @@
-// app/context/AuthContext.tsx
 "use client";
 
 import React, {
@@ -7,19 +6,17 @@ import React, {
   useState,
   useEffect,
   useMemo,
+  useCallback,
   ReactNode,
 } from "react";
 import {jwtDecode} from "jwt-decode";
 
-// Define an interface for the JWT payload.
-// Adjust the fields based on what your JWT token contains.
 interface JWTPayload {
-  sub: string; // user id
+  sub: string;
   name: string;
   email: string;
   role: string;
   exp: number;
-  // add other claims if needed
 }
 
 export interface User {
@@ -45,11 +42,9 @@ const useProvideAuth = (): AuthContextType => {
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
-  // Helper function to decode the token and extract user info.
   const decodeToken = (token: string): User | null => {
     try {
       const decoded = jwtDecode<JWTPayload>(token);
-      // Map the JWT payload fields to the User interface
       return {
         id: decoded.sub,
         name: decoded.name,
@@ -62,8 +57,8 @@ const useProvideAuth = (): AuthContextType => {
     }
   };
 
-  // Check for a token in localStorage and update state accordingly.
-  const checkAuth = () => {
+  // Use useCallback to stabilize the function reference
+  const checkAuth = useCallback(() => {
     const storedToken = localStorage.getItem("token");
     if (storedToken) {
       const decodedUser = decodeToken(storedToken);
@@ -80,27 +75,29 @@ const useProvideAuth = (): AuthContextType => {
       setToken(null);
     }
     setLoading(false);
-  };
+  }, []); // No dependencies needed as it only uses localStorage and setState
 
-  // Called after a successful login to store the token.
-  const login = (newToken: string) => {
+  // Use useCallback to stabilize the function reference
+  const login = useCallback((newToken: string) => {
     localStorage.setItem("token", newToken);
     const decodedUser = decodeToken(newToken);
     setUser(decodedUser);
     setToken(newToken);
-  };
+  }, []);
 
-  // Clears the token and user data upon logout.
-  const logout = () => {
+  // Use useCallback to stabilize the function reference
+  const logout = useCallback(() => {
     localStorage.removeItem("token");
     setUser(null);
     setToken(null);
-  };
-
-  useEffect(() => {
-    checkAuth();
   }, []);
 
+  // Fixed: Added checkAuth to dependency array
+  useEffect(() => {
+    checkAuth();
+  }, [checkAuth]);
+
+  // Fixed: Added login, logout, and checkAuth to dependency array
   return useMemo(
     () => ({
       user,
@@ -110,7 +107,7 @@ const useProvideAuth = (): AuthContextType => {
       logout,
       checkAuth,
     }),
-    [user, token, loading]
+    [user, token, loading, login, logout, checkAuth]
   );
 };
 

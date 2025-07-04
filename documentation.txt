@@ -1,3 +1,6 @@
+Running Frontend : docker build -f frontend.dockerfile -t frontend-app .
+Running Backend : docker build -f ./backend.dockerfile -t backend-app .
+
 Key Differences: Single vs Multi-Container Deployment
 Docker Compose: The major change is introducing a docker-compose.yml file to orchestrate multiple services (frontend, backend, and PostgreSQL). This allows you to manage them as a single application, handling networking and dependencies automatically.
 
