@@ -74,7 +74,7 @@ Role‑based access control (RBAC), JWT authentication, unit tests, GitHub Actio
 * [Git](https://git-scm.com/)
 * [Docker & Docker Compose](https://docs.docker.com/compose/)
 * [Node.js (LTS)](https://nodejs.org/) & npm or yarn
-* [Java 17 JDK](https://adoptium.net/)
+* [Java 21 JDK](https://adoptium.net/)
 * AWS account for EC2 hosting
 
 ---
