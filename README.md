@@ -41,7 +41,7 @@ Supports employee management, leave tracking, role-based access control (RBAC), 
 
 | Layer            | Technology                 |
 | ---------------- | -------------------------- |
-| Backend          | Java 17, Spring Boot       |
+| Backend          | Java 21, Spring Boot       |
 | Frontend         | Next.js, TypeScript, React |
 | Database         | PostgreSQL                 |
 | Testing          | JUnit 5, Mockito           |
